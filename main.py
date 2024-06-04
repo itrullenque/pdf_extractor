@@ -5,12 +5,21 @@ import pandas as pd
 from zenrows import ZenRowsClient
 from urllib.parse import urlparse
 
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+session = requests.Session()
+retry = Retry(connect=3, backoff_factor=0.5)
+adapter = HTTPAdapter(max_retries=retry)
+session.mount('http://', adapter)
+session.mount('https://', adapter)
+
 #zen row client
 zen_row_client = ZenRowsClient("25710735fe41553568fc11d0b9963e0accc2debc")
 
 def download_pdf(url, output_folder, filename):
     try:
-        response = requests.get(url)
+        response = session.get(url)
     except Exception as e:
         print(f"Error: {e}")
         return False
@@ -28,7 +37,7 @@ def download_pdf(url, output_folder, filename):
                     'DNT': '1',
                     'Upgrade-Insecure-Requests': '1'}
         try:
-            response = requests.get(doi_url, headers=headers)
+            response = session.get(doi_url, headers=headers)
         except Exception as e:
             print(f"Error: {e}")
             return False
@@ -134,7 +143,7 @@ def ncbi_nlm_nih_gov(doi_soup,output_folder, filename,headers):
     if pdf_link:
         pdf_url = 'https://www.ncbi.nlm.nih.gov' + pdf_link['href']
         try:
-            pdf_response = requests.get(pdf_url,headers=headers)
+            pdf_response = session.get(pdf_url,headers=headers)
         except Exception as e:
             print(f"Error: {e}")
             return False
@@ -192,7 +201,7 @@ def quintessence_publishing(doi_soup,output_folder, filename,headers):
     if pdf_link:
         pdf_url = 'https://www.quintessence-publishing.com' + pdf_link['href']
         try:
-            pdf_response = requests.get(pdf_url, headers=headers)
+            pdf_response = session.get(pdf_url, headers=headers)
         except Exception as e:
             print(f"Error: {e}")
             return False
@@ -214,7 +223,7 @@ def pubs_rsc_org(response, doi_soup, output_folder, filename,headers):
     result = '/'.join(desired_parts)
     pdf_url = 'https://pubs.rsc.org/en/content/articlepdf/' + result
     try:
-        pdf_response = requests.get(pdf_url, headers=headers)
+        pdf_response = session.get(pdf_url, headers=headers)
     except Exception as e:
         print(f"Error: {e}")
         return False
@@ -243,7 +252,7 @@ def academic_oup_com(response, doi_soup,output_folder, filename,headers):
                 return False
             else:
                 try:
-                    pdf_response = requests.get(pdf_url, headers=headers)
+                    pdf_response = session.get(pdf_url, headers=headers)
                 except Exception as e:
                     print(f"Error: {e}")
                     return False
@@ -285,7 +294,7 @@ def springer_link(doi_soup,output_folder, filename,headers):
     if pdf_link:
         pdf_url = 'link.springer.com/' + pdf_link['href']
         try:
-            pdf_response = requests.get(pdf_url, headers=headers)
+            pdf_response = session.get(pdf_url, headers=headers)
         except Exception as e:
             print(f"Error: {e}")
             return False
@@ -303,7 +312,7 @@ def bmcoralhealth_biomedcentral(doi_soup,output_folder, filename,headers):
     if pdf_link:
         pdf_url = pdf_link['href']
         try:
-            pdf_response = requests.get(pdf_url, headers=headers)
+            pdf_response = session.get(pdf_url, headers=headers)
         except Exception as e:
             print(f"Error: {e}")
             return False
@@ -330,7 +339,7 @@ def medscimonit(doi_soup,output_folder, filename,headers):
         }
         # Send POST request to download the PDF
         try:
-            response_post = requests.post(full_url, data=payload)
+            response_post = session.post(full_url, data=payload)
         except Exception as e:
             print(f"Error: {e}")
             return False
@@ -348,7 +357,7 @@ def swiss_dental_journal(doi_soup,output_folder, filename,headers):
     if pdf_link:
         pdf_url = pdf_link['href']
         try:
-            new_pdf_response = requests.get(pdf_url, headers=headers)
+            new_pdf_response = session.get(pdf_url, headers=headers)
         except Exception as e:
             print(f"Error: {e}")
             return False
@@ -358,7 +367,7 @@ def swiss_dental_journal(doi_soup,output_folder, filename,headers):
             if download:
                 download_url = download['href']
                 try:
-                    download_url_response = requests.get(download_url, headers=headers)
+                    download_url_response = session.get(download_url, headers=headers)
                 except Exception as e:
                     print(f"Error: {e}")
                     return False
