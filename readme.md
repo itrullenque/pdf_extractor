@@ -45,14 +45,21 @@ Example CSV file (csv-halitosis-set (2).csv).
 
 3. Usage
 
-Place the CSV file in the same directory as the main.py script.
+Place the CSV file in the same directory as the script.
+
 Open a terminal or command prompt and navigate to the directory containing the script.
+
 Run the script using the following command: python main.py
 
 The script will process each row in the CSV file and attempt to download the corresponding PDF file from the respective journal website.
+
 The downloaded PDF files will be saved in the downloaded_pdfs directory, which will be created if it doesn't exist.
+
 After the script finishes executing, it will display a summary of the total publications processed, the number of PDFs downloaded successfully, and the number of PDFs that were not available for download.
 
+Retry Mechanism
+The script includes a retry mechanism to handle temporary network issues or connection failures. It uses the requests library's Session object along with the HTTPAdapter and Retry classes to automatically retry failed requests.
+The retry mechanism is configured to attempt a maximum of 3 retries for each request, with a backoff factor of 0.5 seconds between each retry attempt. This helps improve the reliability of the script when dealing with intermittent network issues.
 Limitations
 
 The script relies on the structure and layout of the supported journal websites as of the date of development. If the websites undergo significant changes, the script may need to be updated accordingly.
