@@ -102,8 +102,7 @@ def process_csv(csv_file, output_folder):
         os.makedirs(output_folder)
 
     for _, row in df.iterrows():
-        #pubmed_id = row['PMID']
-        pubmed_id = 38750491
+        pubmed_id = row['PMID']
         title = row['Title']
         url = f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/"
         filename = f"{pubmed_id}_{title}"
