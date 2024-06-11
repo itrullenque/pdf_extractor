@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from zenrows import ZenRowsClient
 from urllib.parse import urlparse
+import time
 
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -351,7 +352,12 @@ def springer_link(doi_soup, output_folder, filename, headers):
         class_="u-button u-button--full-width u-button--primary u-justify-content-space-between c-pdf-download__link",
     )
     if pdf_link:
-        pdf_url = "link.springer.com/" + pdf_link["href"]
+        href = pdf_link["href"]
+        if "wayf.springernature.com" in href:
+            pdf_url = pdf_link["href"]
+            pdf_url = pdf_url.split("//", 2)[-1]
+        else:
+            pdf_url = "link.springer.com/" + pdf_link["href"]
         try:
             pdf_response = session.get(pdf_url, headers=headers)
         except Exception as e:
@@ -461,8 +467,10 @@ def swiss_dental_journal(doi_soup, output_folder, filename, headers):
 
 
 def write_pdf(pdf_response, output_folder, filename):
+    time.sleep(0.2)
     output_path = os.path.join(output_folder, f"{filename}.pdf")
     with open(output_path, "wb") as file:
+        time.sleep(0.2)
         file.write(pdf_response.content)
     return True
 
