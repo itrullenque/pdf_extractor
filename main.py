@@ -8,6 +8,7 @@ import time
 
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import re
 
 session = requests.Session()
 retry = Retry(connect=3, backoff_factor=0.5)
@@ -16,7 +17,7 @@ session.mount("http://", adapter)
 session.mount("https://", adapter)
 
 # zen row client
-zen_row_client = ZenRowsClient("25710735fe41553568fc11d0b9963e0accc2debc")
+zen_row_client = ZenRowsClient("5b20933b35c924f8f13f8210f4f937c352ee95cf")
 
 
 def download_pdf(url, output_folder, filename):
@@ -52,6 +53,9 @@ def download_pdf(url, output_folder, filename):
             doi_soup = BeautifulSoup(response.content, "html.parser")
             if "www.ncbi.nlm.nih.gov" in response.url:
                 result = ncbi_nlm_nih_gov(doi_soup, output_folder, filename, headers)
+                return result
+            elif "www.rhinologyjournal.com" in response.url:
+                result = rhinology_journal(doi_soup, output_folder, filename, headers)
                 return result
             elif "www.quintessence-publishing.com" in response.url:
                 result = quintessence_publishing(
@@ -124,16 +128,22 @@ def download_pdf(url, output_folder, filename):
                 return False
 
 
-def process_csv(csv_file, output_folder):
+def process_csv(csv_file, output_folder, list_downloaded_files):
     df = pd.read_csv(csv_file, delimiter=",")
+    # df = pd.read_excel(csv_file, engine="openpyxl")
     total_count = len(df)
     success_count = 0
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     print(df.columns)
+
+    counter = 0
     for _, row in df.iterrows():
+        counter += 1
         pubmed_id = row["PMID"]
+        if pubmed_id in list_downloaded_files:
+            continue
         title = row["Title"]
         url = f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/"
         filename = f"{pubmed_id}_{title}"
@@ -142,9 +152,13 @@ def process_csv(csv_file, output_folder):
 
         if success:
             success_count += 1
-            print(f"Downloaded PDF for PubMed ID: {pubmed_id}")
+            print(
+                f"Downloaded PDF for PubMed ID: {pubmed_id} , {counter}/{total_count}"
+            )
         else:
-            print(f"PDF not available for PubMed ID: {pubmed_id}")
+            print(
+                f"PDF not available for PubMed ID: {pubmed_id}, {counter}/{total_count}"
+            )
 
     print(f"\nSummary:")
     print(f"Total publications: {total_count}")
@@ -152,7 +166,8 @@ def process_csv(csv_file, output_folder):
     print(f"PDFs not available: {total_count - success_count}")
 
 
-def truncate_filename(filename, max_length=60):
+def truncate_filename(filename, max_length=100):
+    filename = re.sub(r'[<>:"/\\|?*]', "", filename)
     if len(filename) > max_length:
         truncated_filename = filename[:max_length]
         if " " in truncated_filename:
@@ -192,7 +207,9 @@ def ncbi_nlm_nih_gov(doi_soup, output_folder, filename, headers):
 def one_library_wiley(doi_soup, output_folder, filename, headers):
     pdf_link = doi_soup.find("a", class_="coolBar__ctrl pdf-download")
     if pdf_link:
-        pdf_url = "https://onlinelibrary.wiley.com" + pdf_link["href"]
+        pdf_url = (
+            "https://onlinelibrary.wiley.com" + pdf_link["href"] + "?download=true"
+        )
         try:
             pdf_response = zen_row_client.get(pdf_url)
         except Exception as e:
@@ -466,16 +483,52 @@ def swiss_dental_journal(doi_soup, output_folder, filename, headers):
         return False
 
 
+def rhinology_journal(doi_soup, output_folder, filename, headers):
+    pdf_link = doi_soup.find("a", class_="hvr-bounce-to-right")
+    if pdf_link:
+        pdf_url = "https://www.rhinologyjournal.com/" + pdf_link["href"]
+        try:
+            pdf_response = session.get(pdf_url, headers=headers)
+        except Exception as e:
+            print(f"Error: {e}")
+            return False
+        if (
+            pdf_response.status_code == 200
+            and pdf_response.headers["Content-Type"] == "application/pdf"
+        ):
+            write_result = write_pdf(pdf_response, output_folder, filename)
+            if write_result:
+                return write_result
+            else:
+                return False
+        else:
+            print(
+                f"Error: PDF download failed for {filename}. Status code: {pdf_response.status_code}"
+            )
+            return False
+    else:
+        return False
+
+
 def write_pdf(pdf_response, output_folder, filename):
     time.sleep(0.2)
     output_path = os.path.join(output_folder, f"{filename}.pdf")
-    with open(output_path, "wb") as file:
-        time.sleep(0.2)
-        file.write(pdf_response.content)
+    try:
+        with open(output_path, "wb") as file:
+            time.sleep(0.2)
+            file.write(pdf_response.content)
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
     return True
 
 
 # Load the CSV file and process each row
-csv_file = "2024_06_05 S002 Halitosis.csv"
-output_folder = "downloaded_pdfs"
-processor_result = process_csv(csv_file, output_folder)
+csv_file = "Search_Halitosis_2617.csv"
+output_folder = "downloaded_pdfs_pubmed"
+list_downloaded_files = []
+for file in os.listdir(output_folder):
+    file_pmid = int(file.split("_")[0])
+    list_downloaded_files.append(file_pmid)
+
+processor_result = process_csv(csv_file, output_folder, list_downloaded_files)

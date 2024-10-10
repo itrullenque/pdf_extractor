@@ -1,0 +1,10 @@
+.env
+.venv
+pdf
+downloaded_hodor_pdfs/
+downloaded_pdfs/
+downloaded_pdfs_2617/
+downloaded_pdfs_pubmed/
+all_papers/
+.csv
+.xlsx
