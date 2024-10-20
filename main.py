@@ -1,14 +1,14 @@
 import os
+import re
+import time
+from urllib.parse import urlparse
+
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
-from zenrows import ZenRowsClient
-from urllib.parse import urlparse
-import time
-
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-import re
+from zenrows import ZenRowsClient
 
 session = requests.Session()
 retry = Retry(connect=3, backoff_factor=0.5)
@@ -17,7 +17,7 @@ session.mount("http://", adapter)
 session.mount("https://", adapter)
 
 # zen row client
-zen_row_client = ZenRowsClient("5b20933b35c924f8f13f8210f4f937c352ee95cf")
+zen_row_client = ZenRowsClient("fba93467161a4ede6112978fe79e8b3b7429e05f")
 
 
 def download_pdf(url, output_folder, filename):
@@ -524,8 +524,8 @@ def write_pdf(pdf_response, output_folder, filename):
 
 
 # Load the CSV file and process each row
-csv_file = "Search_Halitosis_2617.csv"
-output_folder = "downloaded_pdfs_pubmed"
+csv_file = "SearchV006_5876.csv"
+output_folder = "papers_malodour"
 list_downloaded_files = []
 for file in os.listdir(output_folder):
     file_pmid = int(file.split("_")[0])

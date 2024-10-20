@@ -1,14 +1,15 @@
 import os
-import requests
-from bs4 import BeautifulSoup
-import pandas as pd
-from zenrows import ZenRowsClient
-from urllib.parse import urlparse
+import re
 import time
 
+# from zenrows import ZenRowsClient
+from urllib.parse import urlparse
+
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-import re
 
 session = requests.Session()
 retry = Retry(connect=3, backoff_factor=0.5)
@@ -80,8 +81,8 @@ def download_pdf(url, output_folder, filename):
             return False
 
 
-def process_csv(csv_file, output_folder, list_downloaded_files, start=2246):
-    df = pd.read_csv(csv_file, delimiter=",")
+def process_csv(csv_file, output_folder, list_downloaded_files, start=1):
+    df = pd.read_csv(csv_file, delimiter=",", encoding="utf-8")
     total_count = len(df)
     success_count = 0
 
@@ -131,8 +132,8 @@ def truncate_filename(filename, max_length=100):
 
 
 # Load the CSV file and process each row
-csv_file = "Search_Halitosis_2617.csv"
-output_folder = "downloaded_pdfs_2617"
+csv_file = "SearchV006_5876.csv"
+output_folder = "papers_malodour_scihub"
 list_downloaded_files = []
 for file in os.listdir(output_folder):
     file_pmid = int(file.split("_")[0])
